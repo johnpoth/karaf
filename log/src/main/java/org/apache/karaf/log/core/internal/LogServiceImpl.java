@@ -22,6 +22,8 @@ import java.util.Map;
 
 import org.apache.karaf.log.core.Level;
 import org.apache.karaf.log.core.LogService;
+import org.ops4j.pax.logging.PaxLoggingManager;
+import org.ops4j.pax.logging.PaxLoggingService;
 import org.ops4j.pax.logging.spi.PaxAppender;
 import org.ops4j.pax.logging.spi.PaxLoggingEvent;
 import org.osgi.service.cm.Configuration;
@@ -33,11 +35,14 @@ public class LogServiceImpl implements LogService {
 
     private final ConfigurationAdmin configAdmin;
     private final LruList events;
+    private final PaxLoggingManager paxLoggingManager;
 
-    public LogServiceImpl(ConfigurationAdmin configAdmin, LruList events) {
+    public LogServiceImpl(ConfigurationAdmin configAdmin, LruList events, PaxLoggingManager paxLoggingManager) {
         this.configAdmin = configAdmin;
         this.events = events;
+        this.paxLoggingManager=paxLoggingManager;
     }
+
 
     private LogServiceInternal getDelegate(Dictionary<String, Object> config) {
         if (config.get("log4j.rootLogger") != null) {
@@ -45,6 +50,9 @@ public class LogServiceImpl implements LogService {
         }
         else if (config.get("log4j2.rootLogger.level") != null) {
             return new LogServiceLog4j2Impl(config);
+        } 
+        else if (config.get("org.ops4j.pax.logging.logback.config.file") != null) {
+            return new LogServiceLogbackImpl(config,paxLoggingManager);
         }
         else {
             throw new IllegalStateException("Unrecognized configuration");

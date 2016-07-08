@@ -29,12 +29,15 @@ import org.apache.karaf.util.tracker.annotation.Managed;
 import org.apache.karaf.util.tracker.annotation.ProvideService;
 import org.apache.karaf.util.tracker.annotation.RequireService;
 import org.apache.karaf.util.tracker.annotation.Services;
+import org.ops4j.pax.logging.OSGIPaxLoggingManager;
+import org.ops4j.pax.logging.PaxLoggingManager;
+import org.ops4j.pax.logging.PaxLoggingService;
 import org.ops4j.pax.logging.spi.PaxAppender;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.cm.ManagedService;
 
 @Services(
-        requires = @RequireService(ConfigurationAdmin.class),
+        requires = {@RequireService(ConfigurationAdmin.class)},
         provides = @ProvideService(LogService.class)
 )
 @Managed("org.apache.karaf.log")
@@ -45,6 +48,7 @@ public class Activator extends BaseActivator implements ManagedService {
         if (configurationAdmin == null) {
             return;
         }
+        final PaxLoggingManager osgiPaxLoggingManager = new OSGIPaxLoggingManager(bundleContext);
 
         int size = getInt("size", 500);
         String pattern = getString("pattern", "%d{ABSOLUTE} | %-5.5p | %-16.16t | %-32.32c{1} | %-32.32C %4L | %m%n");
@@ -70,7 +74,7 @@ public class Activator extends BaseActivator implements ManagedService {
         formatter.setTraceColor(traceColor);
         register(LogEventFormatter.class, formatter);
 
-        LogServiceImpl logService = new LogServiceImpl(configurationAdmin, events);
+        LogServiceImpl logService = new LogServiceImpl(configurationAdmin, events,osgiPaxLoggingManager);
         register(LogService.class, logService);
 
         LogMBeanImpl securityMBean = new LogMBeanImpl(logService);
